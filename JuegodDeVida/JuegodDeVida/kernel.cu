@@ -1,37 +1,168 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
+#include <device_functions.h>
 
-__device__ void comprobarVivo(int *a, int idCelula, int ladoMatriz)
+__device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
 {
 	int idHilo = idCelula;
-	int contadorVivas = 0;
-	if (a[idHilo] == 0)
+	int contador = 0;
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra en la esquina superior izquierda de la matriz.
+	if (idCelula == 0)
 	{
-		a[idHilo] = 1;
+		//Creamos array con vecinos de la celula
+		int vecinos[3] = { a[idHilo + 1], a[idHilo + ladoMatriz], a[idHilo + ladoMatriz + 1] };
+		for (int i = 0; i < 3; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
 	}
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra en la esquina superior derecha de la matriz.
+	else if (idHilo == ladoMatriz - 1)
+	{
+		//Creamos array con vecinos de la celula
+		int vecinos[3] = { a[idHilo - 1], a[idHilo + ladoMatriz], a[idHilo + ladoMatriz - 1] };
+		for (int i = 0; i < 3; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra en la esquina inferior izquierda de la matriz.
+	else if (idHilo == (ladoMatriz * ladoMatriz - ladoMatriz))
+	{
+		//Creamos array con vecinos de la celula
+		int vecinos[3] = { a[idHilo + 1], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz + 1] };
+		for (int i = 0; i < 3; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra en la esquina inferior derecha de la matriz.
+	else if (idHilo == ladoMatriz * ladoMatriz - 1)
+	{
+		//Creamos array con vecinos de la celula
+		int vecinos[3] = { a[idHilo - 1], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz - 1] };
+		for (int i = 0; i < 3; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra en el lado izquierdo (pero no en la esquina) de la matriz.
+	else if (idHilo % ladoMatriz == 0)
+	{
+		//Creamos array con vecinos de la celula
+		int vecinos[5] = { a[idHilo + 1], a[idHilo + ladoMatriz], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz + 1], a[idHilo + ladoMatriz + 1] };
+		for (int i = 0; i < 5; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra en el lado derecho (pero no en la esquina) de la matriz.
+	else if (idHilo % (ladoMatriz - 1) == 0)
+	{
+		//Creamos array con vecinos de la celula
+		int vecinos[5] = { a[idHilo - 1], a[idHilo + ladoMatriz], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz - 1], a[idHilo + ladoMatriz - 1] };
+		for (int i = 0; i < 5; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra abajo (pero no en la esquina) de la matriz.
+	else if (idHilo >= ladoMatriz * (ladoMatriz - 1) && idHilo < ladoMatriz * ladoMatriz)
+	{
+		//Creamos array con vecinos de la celula
+		int vecinos[5] = { a[idHilo + 1], a[idHilo - 1], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz + 1], a[idHilo - ladoMatriz - 1] };
+		for (int i = 0; i < 5; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	//Comprobamos si el hilo que ha llamado al kernel se encuentra arriba (pero no en la esquina) de la matriz.
+	else if (idHilo < ladoMatriz)
+	{
+		//Creamos array con vecinos de la celula
+		int vecinos[5] = { a[idHilo + 1], a[idHilo - 1], a[idHilo + ladoMatriz], a[idHilo + ladoMatriz + 1], a[idHilo + ladoMatriz - 1] };
+		for (int i = 0; i < 5; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	//Hilo esta en el medio
 	else
 	{
+		//Creamos array con vecinos de la celula
+		int vecinos[8] = { a[idHilo + 1], a[idHilo - 1], a[idHilo + ladoMatriz], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz - 1], a[idHilo - ladoMatriz + 1], a[idHilo + ladoMatriz + 1], a[idHilo + ladoMatriz - 1] };
+		for (int i = 0; i < 8; i++)
+		{
+			if (vecinos[i] == 1)
+			{
+				contador += 1;
+			}
+		}
+	}
+	return contador;
+}
+__device__ void cambiarEstado(int *a, int idCelula, int ladoMatriz)
+{
+	int idHilo = idCelula;
+	int contador = comprobarVecinos(a, idHilo, ladoMatriz);
+	//La celula esta viva 
+	if (a[idHilo] == 1 && (contador < 2 || contador > 3))
+	{
+		//Hay menos de 2 celulas vivas o mas de 3
+		//Matamos la celula
 		a[idHilo] = 0;
+		printf("Celula %d pasa a estar muerta\n", idHilo);
+	}
+	//La celula esta muerta
+	else if (a[idHilo] == 0 && contador == 3)
+	{
+		//Hay 3 celulas vivas alrededor
+		//La celula nace
+		a[idHilo] = 1;
+		printf("Celula %d pasa a estar viva\n", idHilo);
 	}
 }
-
 //Función de comprobación a realizar por el kernel
 __global__ void llamadaCelula(int *a, int ladoMatriz)
 {
 	int idFila = threadIdx.x;
 	int idColumna = threadIdx.y;
 	int idHilo = idColumna + idFila * blockDim.x;
-	comprobarVivo(a, idHilo, ladoMatriz);
+	cambiarEstado(a, idHilo, ladoMatriz);
 	__syncthreads();
 }
 
 int main(int argc, char** argv)
 {
 	int ladoMatriz = 0;
-	char caracter = ' ';
+	char caracter;
 	int generacion = 0;
-	printf("Introduzca el tamaño de la matriz. \n");
+	printf("Introduzca el tamano de la matriz. \n");
 	scanf("%d", &ladoMatriz);
 	//Declaraciones de variables.
 	int *MatrizA, *MatrizA_d;
@@ -40,9 +171,11 @@ int main(int argc, char** argv)
 	//Reserva de memoria en el device.
 	cudaMalloc((void**)&MatrizA_d, ladoMatriz*ladoMatriz * sizeof(int));
 	//Inicialización de matriz.
-	for (int i = 0; i < ladoMatriz*ladoMatriz; i++)
+	int contadorSemillas = 0;
+	for (int i = 0; i < ladoMatriz * ladoMatriz; i++)
 	{
-		if (rand() % 2)
+		
+		if (rand() % 100 < 25)
 		{
 			MatrizA[i] = 1;
 		}

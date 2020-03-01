@@ -73,7 +73,7 @@ __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
 		}
 	}
 	//Comprobamos si el hilo que ha llamado al kernel se encuentra en el lado derecho (pero no en la esquina) de la matriz.
-	else if (idHilo % (ladoMatriz - 1) == 0)
+	else if (idHilo % ladoMatriz == ladoMatriz - 1)
 	{
 		//Creamos array con vecinos de la celula
 		int vecinos[5] = { a[idHilo - 1], a[idHilo + ladoMatriz], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz - 1], a[idHilo + ladoMatriz - 1] };
@@ -126,7 +126,7 @@ __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
 	}
 	return contador;
 }
-__device__ void cambiarEstado(int *a, int idCelula, int ladoMatriz)
+__device__ void cambiarEstado(int *a, int *aux, int idCelula, int ladoMatriz)
 {
 	int idHilo = idCelula;
 	int contador = comprobarVecinos(a, idHilo, ladoMatriz);
@@ -135,7 +135,7 @@ __device__ void cambiarEstado(int *a, int idCelula, int ladoMatriz)
 	{
 		//Hay menos de 2 celulas vivas o mas de 3
 		//Matamos la celula
-		a[idHilo] = 0;
+		aux[idHilo] = 0;
 		printf("Celula %d pasa a estar muerta\n", idHilo);
 	}
 	//La celula esta muerta
@@ -143,68 +143,56 @@ __device__ void cambiarEstado(int *a, int idCelula, int ladoMatriz)
 	{
 		//Hay 3 celulas vivas alrededor
 		//La celula nace
-		a[idHilo] = 1;
+		aux[idHilo] = 1;
 		printf("Celula %d pasa a estar viva\n", idHilo);
 	}
 }
-//Funci贸n de comprobaci贸n a realizar por el kernel
-__global__ void llamadaCelula(int *a, int ladoMatriz)
+//Funci髇 de comprobaci髇 a realizar por el kernel
+__global__ void llamadaCelula(int *a, int *aux, int ladoMatriz)
 {
 	int idFila = threadIdx.x;
 	int idColumna = threadIdx.y;
 	int idHilo = idColumna + idFila * blockDim.x;
-	cambiarEstado(a, idHilo, ladoMatriz);
+	cambiarEstado(a, aux, idHilo, ladoMatriz);
 	__syncthreads();
 }
 
 int main(int argc, char** argv)
 {
 	int ladoMatriz = 0;
-	char caracter;
+	char caracter = ' ';
 	int generacion = 0;
 	printf("Introduzca el tamano de la matriz. \n");
 	scanf("%d", &ladoMatriz);
 	//Declaraciones de variables.
 	int *MatrizA, *MatrizA_d;
+	int *MatrizAux_d;
 	//Reserva de memoria en el host.
 	MatrizA = (int*)malloc(ladoMatriz*ladoMatriz * sizeof(int));
 	//Reserva de memoria en el device.
 	cudaMalloc((void**)&MatrizA_d, ladoMatriz*ladoMatriz * sizeof(int));
-	//Inicializaci贸n de matriz.
+	cudaMalloc((void**)&MatrizAux_d, ladoMatriz*ladoMatriz * sizeof(int));
+	//Inicializaci髇 de matriz.
 	int contadorSemillas = 0;
 	for (int i = 0; i < ladoMatriz * ladoMatriz; i++)
 	{
 		
-		if (rand() % 100 < 25)
+		if (rand() % 100 < 25 && contadorSemillas < 9) //Solo puede haber un maximo de 9 semillas iniciales. Hay una posibilidad del 25% de que la posicion sea semilla.
 		{
 			MatrizA[i] = 1;
+			contadorSemillas++;
 		}
 		else
 		{
 			MatrizA[i] = 0;
 		}
 	}
-	//Mostramos los valores de la matriz una vez inicializada.
-	printf("Matriz A al inicializarse: \n");
-	for (int i = 0; i < ladoMatriz; i++)
-	{
-		for (int j = 0; j < ladoMatriz; j++)
-		{
-			printf("%d ", MatrizA[j + i * ladoMatriz]);
-		}
-		printf("\n");
-	}
 	dim3 nBloques(1, 1);
 	dim3 hilosBloque((ladoMatriz + nBloques.x - 1) / nBloques.x, (ladoMatriz + nBloques.y - 1) / nBloques.y);
-	//Env铆o de datos al device.
-	cudaMemcpy(MatrizA_d, MatrizA, ladoMatriz*ladoMatriz * sizeof(int), cudaMemcpyHostToDevice);
+	caracter = getchar();
 	while (caracter != 'p')
 	{
-		//Realizaci贸n de la operaci贸n.
-		llamadaCelula << <nBloques, hilosBloque >> > (MatrizA_d, ladoMatriz);
-		//Env铆o de datos al host.
-		cudaMemcpy(MatrizA, MatrizA_d, ladoMatriz*ladoMatriz * sizeof(int), cudaMemcpyDeviceToHost);
-		//Representaci贸n de los resultados.
+		//Representaci髇 de los resultados.
 		printf("Matriz A en generacion %d:\n", generacion);
 		for (int i = 0; i < ladoMatriz; i++)
 		{
@@ -214,10 +202,18 @@ int main(int argc, char** argv)
 			}
 			printf("\n");
 		}
+		//Env韔 de datos al device.
+		cudaMemcpy(MatrizA_d, MatrizA, ladoMatriz*ladoMatriz * sizeof(int), cudaMemcpyHostToDevice);
+		//Realizaci髇 de la operaci髇.
+		llamadaCelula << <nBloques, hilosBloque >> > (MatrizA_d, MatrizAux_d, ladoMatriz);
+		//Env韔 de datos al host.
+		cudaMemcpy(MatrizA_d, MatrizAux_d, ladoMatriz * ladoMatriz * sizeof(int), cudaMemcpyDeviceToDevice);
+		cudaMemcpy(MatrizA, MatrizA_d, ladoMatriz * ladoMatriz * sizeof(int), cudaMemcpyDeviceToHost);
 		caracter = getchar();
 		generacion += 1;
 	}
-	//Liberaci贸n del espacio usado por los punteros.
+	//Liberaci髇 del espacio usado por los punteros.
 	cudaFree(MatrizA_d);
+	cudaFree(MatrizAux_d);
 	free(MatrizA);
 }

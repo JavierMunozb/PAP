@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <windows.h>
 #include <cuda_runtime.h>
 #include <device_functions.h>
 
-__device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
+__device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz, int largoMatriz)
 {
 	int idHilo = idCelula;
 	int contador = 0;
@@ -34,7 +35,7 @@ __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
 		}
 	}
 	//Comprobamos si el hilo que ha llamado al kernel se encuentra en la esquina inferior izquierda de la matriz.
-	else if (idHilo == (ladoMatriz * ladoMatriz - ladoMatriz))
+	else if (idHilo == (ladoMatriz *  largoMatriz - ladoMatriz))
 	{
 		//Creamos array con vecinos de la celula
 		int vecinos[3] = { a[idHilo + 1], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz + 1] };
@@ -47,7 +48,7 @@ __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
 		}
 	}
 	//Comprobamos si el hilo que ha llamado al kernel se encuentra en la esquina inferior derecha de la matriz.
-	else if (idHilo == ladoMatriz * ladoMatriz - 1)
+	else if (idHilo == ladoMatriz * largoMatriz - 1)
 	{
 		//Creamos array con vecinos de la celula
 		int vecinos[3] = { a[idHilo - 1], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz - 1] };
@@ -86,7 +87,7 @@ __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
 		}
 	}
 	//Comprobamos si el hilo que ha llamado al kernel se encuentra abajo (pero no en la esquina) de la matriz.
-	else if (idHilo >= ladoMatriz * (ladoMatriz - 1) && idHilo < ladoMatriz * ladoMatriz)
+	else if (idHilo > ladoMatriz * (largoMatriz - 1) && idHilo < ladoMatriz * largoMatriz)
 	{
 		//Creamos array con vecinos de la celula
 		int vecinos[5] = { a[idHilo + 1], a[idHilo - 1], a[idHilo - ladoMatriz], a[idHilo - ladoMatriz + 1], a[idHilo - ladoMatriz - 1] };
@@ -126,17 +127,16 @@ __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz)
 	}
 	return contador;
 }
-__device__ void cambiarEstado(int *a, int *aux, int idCelula, int ladoMatriz)
+__device__ void cambiarEstado(int *a, int *aux, int idCelula, int ladoMatriz, int largoMatriz)
 {
 	int idHilo = idCelula;
-	int contador = comprobarVecinos(a, idHilo, ladoMatriz);
+	int contador = comprobarVecinos(a, idHilo, ladoMatriz, largoMatriz);
 	//La celula esta viva 
 	if (a[idHilo] == 1 && (contador < 2 || contador > 3))
 	{
 		//Hay menos de 2 celulas vivas o mas de 3
 		//Matamos la celula
 		aux[idHilo] = 0;
-		printf("Celula %d pasa a estar muerta\n", idHilo);
 	}
 	//La celula esta muerta
 	else if (a[idHilo] == 0 && contador == 3)
@@ -144,57 +144,99 @@ __device__ void cambiarEstado(int *a, int *aux, int idCelula, int ladoMatriz)
 		//Hay 3 celulas vivas alrededor
 		//La celula nace
 		aux[idHilo] = 1;
-		printf("Celula %d pasa a estar viva\n", idHilo);
+	}
+	//La celula esta viva
+	else if (a[idHilo] == 1 && (contador == 2 || contador == 3))
+	{
+		//Hay 2 o 3 células alrededor
+		//La célula se mantiene viva
+		aux[idHilo] = 1;
+	}
+	//La celula esta muerta
+	else if (a[idHilo] == 0 && (contador < 2 || contador > 3))
+	{
+		//Hay menos de 2 o más de 3 células vivas alrededor.
+		//La célula se mantiene muerta.
+		aux[idHilo] = 0;
 	}
 }
-//Función de comprobación a realizar por el kernel
-__global__ void llamadaCelula(int *a, int *aux, int ladoMatriz)
+//Función de comprobación a realizar por el kernel.
+__global__ void llamadaCelula(int *a, int *aux, int ladoMatriz, int largoMatriz, int ladoMul16, int largoMul16)
 {
-	int idFila = threadIdx.x;
-	int idColumna = threadIdx.y;
-	int idHilo = idColumna + idFila * blockDim.x;
-	cambiarEstado(a, aux, idHilo, ladoMatriz);
+	int idFila = threadIdx.x + blockIdx.x * blockDim.x;
+	int idColumna = threadIdx.y + blockIdx.y * blockDim.y;
+	int idHilo = idColumna + idFila * ladoMul16;
+	if (idColumna < ladoMatriz && idFila < largoMatriz) //Queremos que solo los hilos que están dentro de la matriz del usuario trabajen.
+	{
+		cambiarEstado(a, aux, idHilo, ladoMatriz, largoMatriz); //El resto de hilos del kernel que no cumplan la condición, no trabajarán.
+	}
 	__syncthreads();
+}
+
+//Esta funcion nos sirve para pasar cualquier numero al multiplo de 16 mas cercano
+//En nuestro caso, es utilizada para encontrar el multiplo de 16 mas cercano de las dimensiones de la matriz
+//De esta manera, mantenemos las dimensiones del bloque a 16*16
+int pasarAMul16(int numero)
+{
+	while (numero % 16 != 0)
+	{
+		numero++;
+	}
+	return numero;
 }
 
 int main(int argc, char** argv)
 {
 	int ladoMatriz = 0;
-	char caracter = ' ';
+	int largoMatriz = 0;
+	char modo = ' ';
+	char caracterParada = ' ';
 	int generacion = 0;
-	printf("Introduzca el tamano de la matriz. \n");
+	printf("Introduzca el metodo de ejecucion (m)anual o (a)utomatica. \n");
+	modo = getchar();
+	printf("Introduzca el ancho de la matriz. \n");
 	scanf("%d", &ladoMatriz);
+	getchar();
+	printf("Introduzca el alto de la matriz. \n");
+	scanf("%d", &largoMatriz);
 	//Declaraciones de variables.
 	int *MatrizA, *MatrizA_d;
-	int *MatrizAux_d;
+	int *MatrizAux, *MatrizAux_d;
 	//Reserva de memoria en el host.
-	MatrizA = (int*)malloc(ladoMatriz*ladoMatriz * sizeof(int));
+	MatrizA = (int*)malloc(ladoMatriz*largoMatriz * sizeof(int));
+	MatrizAux = (int*)malloc(ladoMatriz*largoMatriz * sizeof(int));
 	//Reserva de memoria en el device.
-	cudaMalloc((void**)&MatrizA_d, ladoMatriz*ladoMatriz * sizeof(int));
-	cudaMalloc((void**)&MatrizAux_d, ladoMatriz*ladoMatriz * sizeof(int));
+	cudaMalloc((void**)&MatrizA_d, ladoMatriz*largoMatriz * sizeof(int));
+	cudaMalloc((void**)&MatrizAux_d, ladoMatriz*largoMatriz * sizeof(int));
 	//Inicialización de matriz.
-	int contadorSemillas = 0;
-	for (int i = 0; i < ladoMatriz * ladoMatriz; i++)
+	for (int i = 0; i < ladoMatriz * largoMatriz; i++)
 	{
-		
-		if (rand() % 100 < 25 && contadorSemillas < 9) //Solo puede haber un maximo de 9 semillas iniciales. Hay una posibilidad del 25% de que la posicion sea semilla.
+
+		if (rand() % 2) //Hay una posibilidad del 50% de que la posicion sea una celula viva.
 		{
 			MatrizA[i] = 1;
-			contadorSemillas++;
 		}
 		else
 		{
 			MatrizA[i] = 0;
 		}
 	}
-	dim3 nBloques(1, 1);
-	dim3 hilosBloque((ladoMatriz + nBloques.x - 1) / nBloques.x, (ladoMatriz + nBloques.y - 1) / nBloques.y);
-	caracter = getchar();
-	while (caracter != 'p')
+	//Inicialización de l matriz auxiliar
+	for (int i = 0; i < ladoMatriz * largoMatriz; i++)
+	{
+		MatrizAux[i] = 0;
+	}
+	int ladoMultiplo = pasarAMul16(ladoMatriz);
+	int largoMultiplo = pasarAMul16(largoMatriz);
+	dim3 nBloques(ladoMultiplo / 16, largoMultiplo / 16);
+	dim3 hilosBloque(16, 16);
+	cudaMemcpy(MatrizAux_d, MatrizAux, ladoMatriz * largoMatriz * sizeof(int), cudaMemcpyHostToDevice);
+	caracterParada = getchar();
+	while (caracterParada != 'p')
 	{
 		//Representación de los resultados.
 		printf("Matriz A en generacion %d:\n", generacion);
-		for (int i = 0; i < ladoMatriz; i++)
+		for (int i = 0; i < largoMatriz; i++)
 		{
 			for (int j = 0; j < ladoMatriz; j++)
 			{
@@ -203,17 +245,25 @@ int main(int argc, char** argv)
 			printf("\n");
 		}
 		//Envío de datos al device.
-		cudaMemcpy(MatrizA_d, MatrizA, ladoMatriz*ladoMatriz * sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(MatrizA_d, MatrizA, ladoMatriz * largoMatriz * sizeof(int), cudaMemcpyHostToDevice);
 		//Realización de la operación.
-		llamadaCelula << <nBloques, hilosBloque >> > (MatrizA_d, MatrizAux_d, ladoMatriz);
+		llamadaCelula << <nBloques, hilosBloque >> > (MatrizA_d, MatrizAux_d, ladoMatriz, largoMatriz, ladoMultiplo, largoMultiplo);
 		//Envío de datos al host.
-		cudaMemcpy(MatrizA_d, MatrizAux_d, ladoMatriz * ladoMatriz * sizeof(int), cudaMemcpyDeviceToDevice);
-		cudaMemcpy(MatrizA, MatrizA_d, ladoMatriz * ladoMatriz * sizeof(int), cudaMemcpyDeviceToHost);
-		caracter = getchar();
+		MatrizA_d = MatrizAux_d;
+		cudaMemcpy(MatrizA, MatrizA_d, ladoMatriz * largoMatriz * sizeof(int), cudaMemcpyDeviceToHost);
+		if (modo == 'm')
+		{
+			caracterParada = getchar();
+		}
+		else
+		{
+			Sleep(1000);
+		}
 		generacion += 1;
 	}
 	//Liberación del espacio usado por los punteros.
 	cudaFree(MatrizA_d);
 	cudaFree(MatrizAux_d);
 	free(MatrizA);
+	free(MatrizAux);
 }

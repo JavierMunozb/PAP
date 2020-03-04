@@ -163,11 +163,14 @@ int main(int argc, char** argv)
 	int filas = 0;
 	int columnas = 0;
 	char caracter = ' ';
+	char manual = ' ';
 	int generacion = 0;
 	printf("Introduzca el numero de filas. \n");
 	scanf("%d", &filas);
 	printf("Introduzca el numero de columnas. \n");
 	scanf("%d", &columnas);
+	printf("Introduzca \"m\" si quiere reproducir de forma manual. \n");
+	manual = getchar();
 	//Declaraciones de variables.
 	int *MatrizA, *MatrizA_d;
 	int *MatrizAux_d;
@@ -213,7 +216,10 @@ int main(int argc, char** argv)
 		//Envío de datos al host.
 		cudaMemcpy(MatrizA_d, MatrizAux_d, filas*columnas * sizeof(int), cudaMemcpyDeviceToDevice);
 		cudaMemcpy(MatrizA, MatrizA_d, filas*columnas * sizeof(int), cudaMemcpyDeviceToHost);
-		caracter = getchar();
+		//Si esta en modo manual se espera a que el usuario pulse alguna tecla para continuar (Si es 'p' se para la ejecucion)
+		if (manual == 'm') {
+			caracter = getchar();
+		}
 		generacion += 1;
 	}
 	//Liberación del espacio usado por los punteros.

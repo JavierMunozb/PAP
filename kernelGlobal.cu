@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <cuda_runtime.h>
 #include <device_functions.h>
+#include "../../CUDALibs/common/book.h"
 
 __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz, int largoMatriz)
 {
@@ -148,19 +149,19 @@ __device__ void cambiarEstado(int *a, int *aux, int idCelula, int ladoMatriz, in
 	//La celula esta viva
 	else if (a[idHilo] == 1 && (contador == 2 || contador == 3))
 	{
-		//Hay 2 o 3 c閘ulas alrededor
-		//La c閘ula se mantiene viva
+		//Hay 2 o 3 c茅lulas alrededor
+		//La c茅lula se mantiene viva
 		aux[idHilo] = 1;
 	}
 	//La celula esta muerta
 	else if (a[idHilo] == 0 && (contador < 2 || contador > 3))
 	{
-		//Hay menos de 2 o m醩 de 3 c閘ulas vivas alrededor
-		//La c閘ula se mantiene muerta
+		//Hay menos de 2 o m谩s de 3 c茅lulas vivas alrededor
+		//La c茅lula se mantiene muerta
 		aux[idHilo] = 0;
 	}
 }
-//Funci髇 de comprobaci髇 a realizar por el kernel
+//Funci贸n de comprobaci贸n a realizar por el kernel
 __global__ void llamadaCelula(int *a, int *aux, int ladoMatriz, int largoMatriz)
 {
 	int idFila = threadIdx.x;
@@ -172,6 +173,8 @@ __global__ void llamadaCelula(int *a, int *aux, int ladoMatriz, int largoMatriz)
 
 int main(int argc, char** argv)
 {
+	cudaDeviceProp prop;
+	HANDLE_ERROR(cudaGetDeviceProperties(&prop, 0));
 	int ladoMatriz = 0;
 	int largoMatriz = 0;
 	char modo = ' ';
@@ -179,11 +182,14 @@ int main(int argc, char** argv)
 	int generacion = 0;
 	printf("Introduzca el metodo de ejecucion (m)anual o (a)utomatica. \n");
 	modo = getchar();
-	printf("Introduzca el ancho de la matriz. \n");
-	scanf("%d", &ladoMatriz);
-	getchar();
-	printf("Introduzca el alto de la matriz. \n");
-	scanf("%d", &largoMatriz);
+	do
+	{
+		printf("Introduzca el ancho de la matriz. \n");
+		scanf("%d", &ladoMatriz);
+		getchar();
+		printf("Introduzca el alto de la matriz. \n");
+		scanf("%d", &largoMatriz);
+	}while(ladoMatriz*largoMatriz > prop.maxThreadsPerBlock);
 	//Declaraciones de variables.
 	int *MatrizA, *MatrizA_d;
 	int *MatrizAux, *MatrizAux_d;
@@ -193,7 +199,7 @@ int main(int argc, char** argv)
 	//Reserva de memoria en el device.
 	cudaMalloc((void**)&MatrizA_d, ladoMatriz*largoMatriz * sizeof(int));
 	cudaMalloc((void**)&MatrizAux_d, ladoMatriz*largoMatriz * sizeof(int));
-	//Inicializaci髇 de matriz.
+	//Inicializaci贸n de matriz.
 	int contadorSemillas = 0;
 	for (int i = 0; i < ladoMatriz * largoMatriz; i++)
 	{
@@ -207,7 +213,7 @@ int main(int argc, char** argv)
 			MatrizA[i] = 0;
 		}
 	}
-	//Inicializaci髇 de l matriz auxiliar
+	//Inicializaci贸n de l matriz auxiliar
 	for (int i = 0; i < ladoMatriz * largoMatriz; i++)
 	{
 		MatrizAux[i] = 0;
@@ -218,7 +224,7 @@ int main(int argc, char** argv)
 	caracter = getchar();
 	while (caracter != 'p')
 	{
-		//Representaci髇 de los resultados.
+		//Representaci贸n de los resultados.
 		printf("Matriz A en generacion %d:\n", generacion);
 		for (int i = 0; i < largoMatriz; i++)
 		{
@@ -228,11 +234,11 @@ int main(int argc, char** argv)
 			}
 			printf("\n");
 		}
-		//Env韔 de datos al device.
+		//Env铆o de datos al device.
 		cudaMemcpy(MatrizA_d, MatrizA, ladoMatriz * largoMatriz * sizeof(int), cudaMemcpyHostToDevice);
-		//Realizaci髇 de la operaci髇.
+		//Realizaci贸n de la operaci贸n.
 		llamadaCelula << <nBloques, hilosBloque >> > (MatrizA_d, MatrizAux_d, ladoMatriz, largoMatriz);
-		//Env韔 de datos al host.
+		//Env铆o de datos al host.
 		MatrizA_d = MatrizAux_d;
 		cudaMemcpy(MatrizA, MatrizA_d, ladoMatriz * largoMatriz * sizeof(int), cudaMemcpyDeviceToHost);
 		if (modo == 'm')
@@ -245,7 +251,7 @@ int main(int argc, char** argv)
 		}
 		generacion += 1;
 	}
-	//Liberaci髇 del espacio usado por los punteros.
+	//Liberaci贸n del espacio usado por los punteros.
 	cudaFree(MatrizA_d);
 	cudaFree(MatrizAux_d);
 	free(MatrizA);

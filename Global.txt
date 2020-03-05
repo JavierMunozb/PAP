@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <cuda_runtime.h>
 #include <device_functions.h>
+#include "../../CUDALibs/common/book.h"
 __device__ int comprobarVecinos(int *a, int idCelula, int ladoMatriz, int largoMatriz)
 {
 	int idHilo = idCelula;
@@ -140,6 +141,8 @@ __global__ void llamadaCelula(int *a, int *aux, int ladoMatriz, int largoMatriz)
 
 int main(int argc, char** argv)
 {
+	cudaDeviceProp prop;
+	HANDLE_ERROR(cudaGetDeviceProperties(&prop, 0));
 	int ladoMatriz = 0;
 	int largoMatriz = 0;
 	char modo = ' ';
@@ -147,11 +150,15 @@ int main(int argc, char** argv)
 	int generacion = 0;
 	printf("Introduzca el metodo de ejecucion (m)anual o (a)utomatica. \n");
 	modo = getchar();
-	printf("Introduzca el ancho de la matriz. \n");
-	scanf("%d", &ladoMatriz);
-	getchar();
-	printf("Introduzca el alto de la matriz. \n");
-	scanf("%d", &largoMatriz);
+	do
+	{
+		printf("La dimension de la matriz tendra que ser menor o igual que %d\n", prop.maxThreadsPerBlock);
+		printf("Introduzca el ancho de la matriz. \n");
+		scanf("%d", &ladoMatriz);
+		getchar();
+		printf("Introduzca el alto de la matriz. \n");
+		scanf("%d", &largoMatriz);
+	}while(ladoMatriz*largoMatriz > prop.maxThreadsPerBlock);
 	int *MatrizA, *MatrizA_d;
 	int *MatrizAux, *MatrizAux_d;
 	MatrizA = (int*)malloc(ladoMatriz*largoMatriz * sizeof(int));

@@ -21,7 +21,7 @@ object mainObject
 	
 	def comprobarFin(tablero: List[Int]): Boolean =
 	{
-		println("¿Hemos terminado? 1 (Sí) or 0 (No)")
+		println("¿Hemos terminado? 1 (Sí) or 0 (No)") //Este metodo todavia no está implementado completamente, es solo para probar
 		val response = readInt()
 		if (response == 1) true
 		else false

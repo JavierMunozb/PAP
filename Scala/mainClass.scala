@@ -1,12 +1,10 @@
-import java.awt.Color
-
 object mainObject
 {
 	
 	import scala.io.StdIn.{readLine, readInt}
 	
 	/**
-	 *	Método que recorre el tablero hasta una posición dada y retorna el valor contenido en ella
+	 * Método que recorre el tablero hasta una posición dada y retorna el valor contenido en ella
 	 *
 	 * @param tablero Tablero que se quiere recorrer.
 	 * @param index   Índice al que se quiere llegar en el tablero.
@@ -71,7 +69,7 @@ object mainObject
 	 * Método simple para poder conseguir el índice compatible con la lista utilizando la fila y columna
 	 *
 	 * @param columna Número de la columna
-	 * @param fila Número de la fila
+	 * @param fila    Número de la fila
 	 * @return Índice compatible con la lista
 	 */
 	def conseguirIndice(columna: Int, fila: Int): Int =
@@ -122,7 +120,7 @@ object mainObject
 		val fila = readInt()
 		println("En qué columna quieres poner la bola seleccionada")
 		val columna = readInt()
-		val aux = conseguirIndice(columna, fila) //Fórmula para calcular la posición en el tablero usando la columna y la fila.
+		val aux = conseguirIndice(columna, fila) //Usamos este método para calcular el índice mediante columna y fila
 		if (comprobarMovimiento(tablero, aux)) aux else
 		{
 			println("Movimiento no válido, vuelva a intentarlo con otro movimiento")

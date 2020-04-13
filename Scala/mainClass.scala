@@ -1,7 +1,30 @@
+import javax.swing.text.TableView.TableRow
+
 object mainObject
 {
 	
 	import scala.io.StdIn.{readLine, readInt}
+	
+	/**
+	 *
+	 * @param tablero Tablero que se quiere recorrer
+	 * @param index Índice al que se quiere llegar en el tablero
+	 * @return Valor de la posición indicada del tablero
+	 */
+	def recorrerTablero(tablero: List[Int], index : Int): Int =
+	{
+		def recorrerDentro(tablero: List[Int], i : Int, index : Int): Int =
+		{
+			tablero match
+			{
+				case head :: tail =>
+					if(i == index) head
+					else recorrerDentro(tail, i+1, index)
+				case Nil => -1
+			}
+		}
+		recorrerDentro(tablero, 1, index)
+	}
 	
 	/**
 	 * Método utilizado para poder imprimir el tablero por la pantalla
@@ -39,15 +62,27 @@ object mainObject
 	}
 	
 	/**
+	 * Método utilizado para comprobar si un movimiento es válido o no.
+	 *
+	 * @param tablero Tablero sobre el que queremos comprobar los caminos posibles.
+	 * @param i Posición en el tablero, la cual queremos comprobar si es válida o no.
+	 * @return Un valor booleano dependiendo de si el movimiento es válido o no.
+	 */
+	def comprobarMovimiento(tablero: List[Int], i: Int): Boolean =
+	{
+		if
+	}
+	
+	/**
 	 * Metodo utilizado para pedir la posición de la bola que el usuario quiere mover.
 	 *
 	 * @return Retorna un valor numérico que indica la bola seleccionada por el usuario.
 	 */
-	def seleccionarBola(): Int =
+	def seleccionarBola(tablero: List[Int]): Int =
 	{
-		println("Seleccione la bola que quiere mover")
+		println("Seleccione la posición de la bola que quiere mover")
 		val aux = readInt()
-		aux
+		recorrerTablero(tablero, aux)
 	}
 	
 	/**
@@ -55,10 +90,11 @@ object mainObject
 	 *
 	 * @return Retorna un valor numérico que indica la posición deseada por el usuario.
 	 */
-	def pedirMovimiento(): Int =
+	def pedirMovimiento(tablero: List[Int]): Int =
 	{
 		println("En qué posición quieres poner la bola seleccionada")
 		val aux: Int = readInt()
+		comprobarMovimiento(tablero, aux)
 		aux
 	}
 	
@@ -82,24 +118,24 @@ object mainObject
 	 *
 	 * @param tablero Tablero con el que se desea continuar la ejecución del juego
 	 */
-	def BucleJuego(tablero: List[Int])
+	def bucleJuego(tablero: List[Int])
 	{
+		enseñarTablero(tablero)
 		if (comprobarFin(tablero))
 		{
 			println("Se acabó el juego")
 		} else
 		{
-			enseñarTablero(tablero)
-			val bolaElegida = seleccionarBola()
-			val posicionElegida = pedirMovimiento()
+			val bolaElegida = seleccionarBola(tablero)
+			val posicionElegida = pedirMovimiento(tablero)
 			val actualizado: List[Int] = realizarMovimiento(bolaElegida, posicionElegida, tablero)
-			BucleJuego(actualizado)
+			bucleJuego(actualizado)
 		}
 	}
 	
 	def main(args: Array[String]): Unit =
 	{
 		val tablero = List.fill(81)(0)
-		BucleJuego(tablero)
+		bucleJuego(tablero)
 	}
 }

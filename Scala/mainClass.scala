@@ -24,15 +24,24 @@ object mainObject
 		
 		recorrerDentro(tablero, 1, index)
 	}
-	
+
+//	/**
+//	 * Método utilizado para crear y popular el tablero inicial
+//	 *
+//	 * @return Tablero creado de manera aleatoria
+//	 */
+//	def crearTablero(): List[Int] =
+//	{
+//		//TODO: Crear método de generación de tableros aleatorios
+//	}
 	/**
 	 * Método utilizado para poder imprimir el tablero por la pantalla.
 	 *
 	 * @param tablero Tablero que queremos enseñar por pantalla.
 	 */
-	def enseñarTablero(tablero: List[Int]) //Esta funcion nos sirve para mostrar el tablero por el terminal
+	def enseñarTablero(tablero: List[Int]): Unit = //Esta funcion nos sirve para mostrar el tablero por el terminal
 	{
-		def enseñarDentro(tablero: List[Int], i: Int) //Esta función nos permite usar un índice para formatear la salida
+		def enseñarDentro(tablero: List[Int], i: Int): Unit = //Esta función nos permite usar un índice para formatear la salida
 		{
 			tablero match
 			{
@@ -62,8 +71,8 @@ object mainObject
 	{
 		//TODO: Implementar un método que compruebe si queda algún movimiento viable más
 		println("¿Hemos terminado? 1 (Sí) or 0 (No)") //Este metodo todavia no está implementado, es para testear
-		val response = readInt()
-		if (response == 1) true
+		val answer = readInt()
+		if (answer == 1) true
 		else false
 	}
 	
@@ -82,29 +91,31 @@ object mainObject
 	/**
 	 * Método utilizado para calcular el siguiente movimiento válido
 	 *
-	 * @param tablero Tablero sobre el que se realiza la comprobación
+	 * @param tablero    Tablero sobre el que se realiza la comprobación
 	 * @param posInicial Posición desde la que se parte
 	 * @param posFinal   Posición a la que se quiere llegar
 	 * @return Siguiente movimiento válido posible
 	 */
 	def calcularMovimiento(tablero: List[Int], posInicial: Int, posFinal: Int): Int =
 	{
-		val filaInicial = (posInicial + 9) / 9
-		val colInicial = posInicial / 9
-		val filaFinal = (posFinal + 9) / 9
-		val colFinal = posFinal / 9
-		val filaPosible =
-			if (filaInicial<filaFinal) filaInicial+1
-			else if (filaInicial>filaFinal) filaInicial-1
-			else filaInicial
-		val colPosible =
-			if (colInicial<colFinal) colInicial+1
-			else if (colInicial>colFinal) colInicial-1
-			else colInicial
-		val filaPosibleColInicial = conseguirIndice(colInicial, filaPosible) //El índice de colInicial y la nueva fila
-		val filaInicialColPosible = conseguirIndice(colPosible, filaInicial) //El índice de la columna nueva y filaInicial
-		if (filaPosible!=filaInicial && recorrerTablero(tablero, filaPosibleColInicial)== 0) filaPosibleColInicial
-		else if (colPosible != colInicial && recorrerTablero(tablero, filaInicialColPosible) == 0) filaInicialColPosible
+		val filaInicial = (posInicial + 9)/ 9
+		val colInicial = posInicial % 9
+		val filaFinal = (posFinal + 9)/ 9
+		val colFinal = posFinal % 9
+		val filaPosible = if (filaInicial < filaFinal) filaInicial + 1
+		else if (filaInicial > filaFinal) filaInicial - 1
+		else filaInicial
+		val colPosible = if (colInicial < colFinal) colInicial + 1
+		else if (colInicial > colFinal) colInicial - 1
+		else colInicial
+		if (filaPosible != filaInicial && recorrerTablero(tablero, conseguirIndice(colInicial, filaPosible)) == 0)
+		{
+			conseguirIndice(colInicial, filaPosible)
+		}
+		else if (colPosible != colInicial && recorrerTablero(tablero, conseguirIndice(colPosible, filaInicial)) == 0)
+		{
+			conseguirIndice(colPosible, filaInicial)
+		}
 		else -1
 	}
 	
@@ -141,7 +152,7 @@ object mainObject
 		println("En qué columna se encuentra la bola deseada")
 		val columna = readInt()
 		val aux = conseguirIndice(columna, fila)
-		if (aux > 0 && aux <= 81) recorrerTablero(tablero, aux)
+		if (aux >= 0 && aux < tablero.length) recorrerTablero(tablero, aux)
 		else
 		{
 			println("Esa posición no se encuentra dentro del tablero, por favor vuelva a intentarlo")
@@ -150,9 +161,11 @@ object mainObject
 	}
 	
 	/**
-	 * Método utilizado para pedir la posición objetivo del movimiento al usuario.
+	 * Método utilizado para pedir al usuario el movimiento que quiere realizar.
 	 *
-	 * @return Retorna un valor numérico que indica la posición deseada por el usuario.
+	 * @param tablero    Tablero sobre el que se va a realizar el movimiento
+	 * @param posInicial Posición donde se inicia el movimiento
+	 * @return Índice de la posición objetivo del movimiento del usuario
 	 */
 	def pedirMovimiento(tablero: List[Int], posInicial: Int): Int =
 	{
@@ -190,25 +203,24 @@ object mainObject
 	 *
 	 * @param tablero Tablero con el que se desea continuar la ejecución del juego.
 	 */
-	def bucleJuego(tablero: List[Int])
+	def bucleJuego(tablero: List[Int]): Unit =
 	{
 		enseñarTablero(tablero)
-		if (comprobarFin(tablero))
-		{
-			println("Se acabó el juego")
-		}
-		else
-		{
-			val bolaElegida = seleccionarBola(tablero)
-			val posicionElegida = pedirMovimiento(tablero, bolaElegida)
-			val actualizado = realizarMovimiento(bolaElegida, posicionElegida, tablero)
-			bucleJuego(actualizado)
-		}
+		if (/*comprobarFin(tablero)*/ false)
+			{
+				println("Se acabó el juego")
+			} else
+			{
+				val bolaElegida = seleccionarBola(tablero)
+				val posicionElegida = pedirMovimiento(tablero, bolaElegida)
+				val actualizado = realizarMovimiento(bolaElegida, posicionElegida, tablero)
+				bucleJuego(actualizado)
+			}
 	}
 	
 	def main(args: Array[String]): Unit =
 	{
-		val tablero = List.fill(81)(0)
+		val tablero = List(1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 		bucleJuego(tablero)
 	}
 }

@@ -16,7 +16,8 @@ object mainObject
 		{
 			tablero match
 			{
-				case head :: tail => if (i == index) head else recorrerDentro(tail, i + 1, index)
+				case head :: tail => if (i == index) head
+				else recorrerDentro(tail, i + 1, index)
 				case Nil => -1
 			}
 		}
@@ -35,7 +36,8 @@ object mainObject
 		{
 			tablero match
 			{
-				case head :: tail => if (i % 9 == 0) println(head) else print(head)
+				case head :: tail => if (i % 9 == 0) println(head)
+				else print(head)
 					enseñarDentro(tail, i + 1)
 				case Nil =>
 			}
@@ -43,14 +45,13 @@ object mainObject
 		
 		enseñarDentro(tablero, 1)
 	}
-	
-	
-	def comprobar5EnRaya(tablero: List[Int]): List[Int] =
-	{
-		//TODO: Encontrar manera de comprobar si hay 5 bolas adyacentes del mismo color, teniendo en cuenta
-		// todas las diagonales posibles
-	}
-	
+
+
+//	def comprobar5EnRaya(tablero: List[Int]): List[Int] =
+//	{
+//		//TODO: Encontrar manera de comprobar si hay 5 bolas adyacentes del mismo color, teniendo en cuenta
+//		// todas las diagonales posibles
+//	}
 	/**
 	 * Método que comprueba si quedan más movimientos disponibles en en tablero.
 	 *
@@ -62,7 +63,8 @@ object mainObject
 		//TODO: Implementar un método que compruebe si queda algún movimiento viable más
 		println("¿Hemos terminado? 1 (Sí) or 0 (No)") //Este metodo todavia no está implementado, es para testear
 		val response = readInt()
-		if (response == 1) true else false
+		if (response == 1) true
+		else false
 	}
 	
 	/**
@@ -77,17 +79,54 @@ object mainObject
 		9 * (fila - 1) + columna
 	}
 	
+	/**
+	 * Método utilizado para calcular el siguiente movimiento válido
+	 *
+	 * @param tablero Tablero sobre el que se realiza la comprobación
+	 * @param posInicial Posición desde la que se parte
+	 * @param posFinal   Posición a la que se quiere llegar
+	 * @return Siguiente movimiento válido posible
+	 */
+	def calcularMovimiento(tablero: List[Int], posInicial: Int, posFinal: Int): Int =
+	{
+		val filaInicial = (posInicial + 9) / 9
+		val colInicial = posInicial / 9
+		val filaFinal = (posFinal + 9) / 9
+		val colFinal = posFinal / 9
+		val filaPosible =
+			if (filaInicial<filaFinal) filaInicial+1
+			else if (filaInicial>filaFinal) filaInicial-1
+			else filaInicial
+		val colPosible =
+			if (colInicial<colFinal) colInicial+1
+			else if (colInicial>colFinal) colInicial-1
+			else colInicial
+		val filaPosibleColInicial = conseguirIndice(colInicial, filaPosible) //El índice de colInicial y la nueva fila
+		val filaInicialColPosible = conseguirIndice(colPosible, filaInicial) //El índice de la columna nueva y filaInicial
+		if (filaPosible!=filaInicial && recorrerTablero(tablero, filaPosibleColInicial)== 0) filaPosibleColInicial
+		else if (colPosible != colInicial && recorrerTablero(tablero, filaInicialColPosible) == 0) filaInicialColPosible
+		else -1
+	}
+	
 	
 	/**
-	 * Método utilizado para comprobar si un movimiento es válido o no.
+	 * Método que comprueba si un movimiento es válido o no
 	 *
-	 * @param tablero Tablero sobre el que queremos comprobar los movimientos.
-	 * @param i       Posición en el tablero, la cual queremos comprobar si es válida o no.
-	 * @return Un valor booleano dependiendo de si el movimiento es válido o no.
+	 * @param tablero    Tablero en el que se efectua la comprobación
+	 * @param posInicial Posición desde la que se parte
+	 * @param posFinal   Posición objetivo
+	 * @return
 	 */
-	def comprobarMovimiento(tablero: List[Int], i: Int): Boolean =
+	def comprobarMovimiento(tablero: List[Int], posInicial: Int, posFinal: Int): Boolean =
 	{
 		//TODO: Crear un método que compruebe si un movimiento es válido o no
+		if (posInicial == posFinal) true
+		else
+		{
+			val nuevoInicial = calcularMovimiento(tablero, posInicial, posFinal)
+			if (nuevoInicial == -1) false //Si este valor es -1 es que no quedan movimientos válidos con esta pieza
+			else comprobarMovimiento(tablero, nuevoInicial, posFinal)
+		}
 	}
 	
 	/**
@@ -102,7 +141,8 @@ object mainObject
 		println("En qué columna se encuentra la bola deseada")
 		val columna = readInt()
 		val aux = conseguirIndice(columna, fila)
-		if (aux > 0 && aux <= 81) recorrerTablero(tablero, aux) else
+		if (aux > 0 && aux <= 81) recorrerTablero(tablero, aux)
+		else
 		{
 			println("Esa posición no se encuentra dentro del tablero, por favor vuelva a intentarlo")
 			seleccionarBola(tablero)
@@ -114,34 +154,35 @@ object mainObject
 	 *
 	 * @return Retorna un valor numérico que indica la posición deseada por el usuario.
 	 */
-	def pedirMovimiento(tablero: List[Int]): Int =
+	def pedirMovimiento(tablero: List[Int], posInicial: Int): Int =
 	{
 		println("En qué fila quieres poner la bola seleccionada")
 		val fila = readInt()
 		println("En qué columna quieres poner la bola seleccionada")
 		val columna = readInt()
-		val aux = conseguirIndice(columna, fila) //Usamos este método para calcular el índice mediante columna y fila
-		if (comprobarMovimiento(tablero, aux)) aux else
+		val posFinal = conseguirIndice(columna, fila) //Usamos este método para calcular el índice mediante columna y fila
+		if (comprobarMovimiento(tablero, posInicial, posFinal)) posFinal
+		else
 		{
 			println("Movimiento no válido, vuelva a intentarlo con otro movimiento")
-			pedirMovimiento(tablero)
+			pedirMovimiento(tablero, posInicial)
 		}
 	}
 	
 	/**
 	 * Método que realiza un movimiento dentro del tablero.
 	 *
-	 * @param color   Valor que representa el color de la bola que el usuario quiere poner.
+	 * @param bola    Valor que representa el color de la bola que el usuario quiere poner.
 	 * @param pos     Posición en la que se colocará la bola.
 	 * @param tablero Tablero sobre el que se realizan las operaciones.
 	 * @return Tablero actualizado una vez se han realizado los movimientos indicados.
 	 */
-	def realizarMovimiento(color: Int, pos: Int, tablero: List[Int]): List[Int] =
+	def realizarMovimiento(bola: Int, pos: Int, tablero: List[Int]): List[Int] =
 	{
-		if (tablero.isEmpty) Nil //Si la lista está vacía, no se puede realizar el movimiento
-		else if (pos == 1) color :: tablero.tail //Si la posición indicada es la primera, se realiza el movimiento
-		else tablero.head :: realizarMovimiento(color, (pos - 1), tablero.tail) //Se continúa recursivamente hasta pos = 1
-		comprobar5EnRaya(tablero)
+		if (tablero.isEmpty) Nil
+		else if (pos == 1) bola :: tablero.tail
+		else tablero.head :: realizarMovimiento(bola, pos - 1, tablero.tail)
+		//comprobar5EnRaya(tablero)
 	}
 	
 	/**
@@ -155,10 +196,11 @@ object mainObject
 		if (comprobarFin(tablero))
 		{
 			println("Se acabó el juego")
-		} else
+		}
+		else
 		{
 			val bolaElegida = seleccionarBola(tablero)
-			val posicionElegida = pedirMovimiento(tablero)
+			val posicionElegida = pedirMovimiento(tablero, bolaElegida)
 			val actualizado = realizarMovimiento(bolaElegida, posicionElegida, tablero)
 			bucleJuego(actualizado)
 		}

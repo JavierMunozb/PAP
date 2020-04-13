@@ -1,9 +1,12 @@
+import java.awt.Color
+
 object mainObject
 {
 	
 	import scala.io.StdIn.{readLine, readInt}
 	
 	/**
+	 *	Método que recorre el tablero hasta una posición dada y retorna el valor contenido en ella
 	 *
 	 * @param tablero Tablero que se quiere recorrer.
 	 * @param index   Índice al que se quiere llegar en el tablero.
@@ -43,6 +46,13 @@ object mainObject
 		enseñarDentro(tablero, 1)
 	}
 	
+	
+	def comprobar5EnRaya(tablero: List[Int]): List[Int] =
+	{
+		//TODO: Encontrar manera de comprobar si hay 5 bolas adyacentes del mismo color, teniendo en cuenta
+		// todas las diagonales posibles
+	}
+	
 	/**
 	 * Método que comprueba si quedan más movimientos disponibles en en tablero.
 	 *
@@ -51,10 +61,24 @@ object mainObject
 	 */
 	def comprobarFin(tablero: List[Int]): Boolean =
 	{
+		//TODO: Implementar un método que compruebe si queda algún movimiento viable más
 		println("¿Hemos terminado? 1 (Sí) or 0 (No)") //Este metodo todavia no está implementado, es para testear
 		val response = readInt()
 		if (response == 1) true else false
 	}
+	
+	/**
+	 * Método simple para poder conseguir el índice compatible con la lista utilizando la fila y columna
+	 *
+	 * @param columna Número de la columna
+	 * @param fila Número de la fila
+	 * @return Índice compatible con la lista
+	 */
+	def conseguirIndice(columna: Int, fila: Int): Int =
+	{
+		9 * (fila - 1) + columna
+	}
+	
 	
 	/**
 	 * Método utilizado para comprobar si un movimiento es válido o no.
@@ -65,7 +89,7 @@ object mainObject
 	 */
 	def comprobarMovimiento(tablero: List[Int], i: Int): Boolean =
 	{
-		if
+		//TODO: Crear un método que compruebe si un movimiento es válido o no
 	}
 	
 	/**
@@ -75,10 +99,12 @@ object mainObject
 	 */
 	def seleccionarBola(tablero: List[Int]): Int =
 	{
-		println("Seleccione la posición de la bola que quiere mover")
-		val aux = readInt()
-		if(aux > 0 && aux <= 81) recorrerTablero(tablero, aux)
-		else
+		println("En qué fila se encuentra la bola deseada")
+		val fila = readInt()
+		println("En qué columna se encuentra la bola deseada")
+		val columna = readInt()
+		val aux = conseguirIndice(columna, fila)
+		if (aux > 0 && aux <= 81) recorrerTablero(tablero, aux) else
 		{
 			println("Esa posición no se encuentra dentro del tablero, por favor vuelva a intentarlo")
 			seleccionarBola(tablero)
@@ -92,8 +118,11 @@ object mainObject
 	 */
 	def pedirMovimiento(tablero: List[Int]): Int =
 	{
-		println("En qué posición quieres poner la bola seleccionada")
-		val aux = readInt()
+		println("En qué fila quieres poner la bola seleccionada")
+		val fila = readInt()
+		println("En qué columna quieres poner la bola seleccionada")
+		val columna = readInt()
+		val aux = conseguirIndice(columna, fila) //Fórmula para calcular la posición en el tablero usando la columna y la fila.
 		if (comprobarMovimiento(tablero, aux)) aux else
 		{
 			println("Movimiento no válido, vuelva a intentarlo con otro movimiento")
@@ -102,7 +131,7 @@ object mainObject
 	}
 	
 	/**
-	 * Este método realiza un movimiento dentro del tablero.
+	 * Método que realiza un movimiento dentro del tablero.
 	 *
 	 * @param color   Valor que representa el color de la bola que el usuario quiere poner.
 	 * @param pos     Posición en la que se colocará la bola.
@@ -114,6 +143,7 @@ object mainObject
 		if (tablero.isEmpty) Nil //Si la lista está vacía, no se puede realizar el movimiento
 		else if (pos == 1) color :: tablero.tail //Si la posición indicada es la primera, se realiza el movimiento
 		else tablero.head :: realizarMovimiento(color, (pos - 1), tablero.tail) //Se continúa recursivamente hasta pos = 1
+		comprobar5EnRaya(tablero)
 	}
 	
 	/**

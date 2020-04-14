@@ -86,7 +86,7 @@ object mainObject
 		{
 			tablero match
 			{
-				case head :: tail => if (head == '-') false else comprobarDentro(tablero, i + 1)
+				case head :: tail => if (head == '-') false else comprobarDentro(tail, i + 1)
 				case Nil => true
 			}
 		}
@@ -211,8 +211,9 @@ object mainObject
 	 * Bucle recursivo principal del juego.
 	 *
 	 * @param tablero Tablero con el que se desea continuar la ejecución del juego.
+	 * @param puntuacion Puntuación del usuario hasta el momento
 	 */
-	@tailrec def bucleJuego(tablero: List[Char]): Unit =
+	@tailrec def bucleJuego(tablero: List[Char], puntuacion: Int): Unit =
 	{
 		mostrarTablero(tablero)
 		if (comprobarFin(tablero))
@@ -224,7 +225,8 @@ object mainObject
 				val posicionFinalElegida = pedirMovimiento(tablero, posicionInicialElegida)
 				val aux = realizarMovimiento(recorrerTablero(tablero, posicionInicialElegida), posicionFinalElegida, tablero)
 				val actualizado = realizarMovimiento('-', posicionInicialElegida, aux)
-				bucleJuego(actualizado)
+				val puntuacionActualizada = 0 //Este valor es temporal
+				bucleJuego(actualizado, puntuacionActualizada)
 			}
 	}
 	
@@ -232,6 +234,6 @@ object mainObject
 	{
 		val aux = List.fill(81)('-')
 		val tablero = crearTablero(aux, 9)
-		bucleJuego(tablero)
+		bucleJuego(tablero, 0)
 	}
 }

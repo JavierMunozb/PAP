@@ -7,7 +7,7 @@ object mainObject
 	import scala.io.StdIn.readInt
 	
 	/**
-	 * Método que recorre el tablero hasta una posición dada y retorna el valor contenido en ella
+	 * Método que recorre el tablero hasta una posición dada y retorna el valor contenido en ella.
 	 *
 	 * @param tablero Tablero que se quiere recorrer.
 	 * @param index   Índice al que se quiere llegar en el tablero.
@@ -15,8 +15,7 @@ object mainObject
 	 */
 	def recorrerTablero(tablero: List[Char], index: Int): Char =
 	{
-		@tailrec
-		def recorrerDentro(tablero: List[Char], i: Int, index: Int): Char =
+		@tailrec def recorrerDentro(tablero: List[Char], i: Int, index: Int): Char =
 		{
 			tablero match
 			{
@@ -30,18 +29,16 @@ object mainObject
 	}
 	
 	/**
-	 * Método utilizado para crear y popular el tablero inicial
+	 * Método utilizado para crear y popular el tablero inicial.
 	 *
-	 * @return Tablero creado de manera aleatoria
+	 * @return Tablero creado de manera aleatoria.
 	 */
-	@tailrec
-	def crearTablero(tablero: List[Char], numeroDeValores: Int): List[Char] =
+	@tailrec def crearTablero(tablero: List[Char], numeroDeValores: Int): List[Char] =
 	{
 		val posAleatoria = 1 + Random.nextInt(81)
 		val letrasPosibles = List('A', 'N', 'R', 'V', 'M', 'G') //Lista con las posibles bolas del juego
 		val letraAleatoria = recorrerTablero(letrasPosibles, 1 + Random.nextInt(letrasPosibles.length))
 		val aux = realizarMovimiento(letraAleatoria, posAleatoria, tablero)
-		println(numeroDeValores)
 		if (numeroDeValores > 0) crearTablero(aux, numeroDeValores - 1) else aux
 	}
 	
@@ -52,8 +49,7 @@ object mainObject
 	 */
 	def mostrarTablero(tablero: List[Char]): Unit = //Esta funcion nos sirve para mostrar el tablero por el terminal
 	{
-		@tailrec
-		def mostrarDentro(tablero: List[Char], i: Int): Unit = //Utilizamos una función interna para conservar el índice
+		@tailrec def mostrarDentro(tablero: List[Char], i: Int): Unit = //Utilizamos una función interna para conservar el índice
 		{
 			tablero match
 			{
@@ -66,31 +62,45 @@ object mainObject
 		
 		mostrarDentro(tablero, 1)
 	}
-
+	
+//	/**
+//	 *
+//	 * Función que comprueba si hay alguna posición con 5 valores en raya y devuelve sus posiciones.
+//	 *
+//	 * @param tablero Tablero sobre el que se realiza la búsqueda.
+//	 * @return Lista con las posiciones de los objetos con 5 en raya.
+//	 */
 //	def comprobar5EnRaya(tablero: List[Int]): List[Int] =
 //	{
 //		//TODO: Encontrar manera de comprobar si hay 5 bolas adyacentes del mismo color, teniendo en cuenta todas las diagonales posibles
 //	}
+	
 	/**
 	 * Método que comprueba si quedan más movimientos disponibles en en tablero.
 	 *
 	 * @param tablero Tablero sobre el que queremos comprobar si quedan más movimientos disponibles.
-	 * @return Retornamos si quedan más movimientos disponibles o no.
+	 * @return Valor booleano que indica si quedan o no más movimientos posibles.
 	 */
 	def comprobarFin(tablero: List[Char]): Boolean =
 	{
-		//TODO: Implementar un método que compruebe si queda algún movimiento viable más
-		println("¿Hemos terminado? 1 (Sí) or 0 (No)") //Este metodo todavia no está implementado, es para testear
-		val answer = readInt()
-		if (answer == 1) true else false
+		@tailrec def comprobarDentro(tablero: List[Char], i: Int): Boolean =
+		{
+			tablero match
+			{
+				case head :: tail => if (head == '-') false else comprobarDentro(tablero, i + 1)
+				case Nil => true
+			}
+		}
+		
+		comprobarDentro(tablero, 1)
 	}
 	
 	/**
-	 * Método simple para poder conseguir el índice compatible con la lista utilizando la fila y columna
+	 * Método simple para poder conseguir el índice compatible con la lista utilizando la fila y columna.
 	 *
-	 * @param columna Número de la columna
-	 * @param fila    Número de la fila
-	 * @return Índice compatible con la lista
+	 * @param columna Número de la columna.
+	 * @param fila    Número de la fila.
+	 * @return Índice compatible con la lista.
 	 */
 	def conseguirIndice(columna: Int, fila: Int): Int =
 	{
@@ -98,12 +108,12 @@ object mainObject
 	}
 	
 	/**
-	 * Método utilizado para calcular el siguiente movimiento válido
+	 * Método utilizado para calcular el siguiente movimiento válido.
 	 *
-	 * @param tablero    Tablero sobre el que se realiza la comprobación
-	 * @param posInicial Posición desde la que se parte
-	 * @param posFinal   Posición a la que se quiere llegar
-	 * @return Siguiente movimiento válido posible
+	 * @param tablero    Tablero sobre el que se realiza la comprobación.
+	 * @param posInicial Posición desde la que se parte.
+	 * @param posFinal   Posición a la que se quiere llegar.
+	 * @return Siguiente movimiento válido posible.
 	 */
 	def calcularMovimiento(tablero: List[Char], posInicial: Int, posFinal: Int): Int =
 	{
@@ -126,15 +136,14 @@ object mainObject
 	}
 	
 	/**
-	 * Método que comprueba si un movimiento es válido o no
+	 * Método que comprueba si un movimiento es válido o no.
 	 *
-	 * @param tablero    Tablero en el que se efectua la comprobación
-	 * @param posInicial Posición desde la que se parte
-	 * @param posFinal   Posición objetivo
-	 * @return
+	 * @param tablero    Tablero en el que se efectua la comprobación.
+	 * @param posInicial Posición desde la que se parte.
+	 * @param posFinal   Posición objetivo.
+	 * @return Valor booleano que indica si el movimiento propuesto es válido o no.
 	 */
-	@tailrec
-	def comprobarMovimiento(tablero: List[Char], posInicial: Int, posFinal: Int): Boolean =
+	@tailrec def comprobarMovimiento(tablero: List[Char], posInicial: Int, posFinal: Int): Boolean =
 	{
 		if (posInicial == posFinal) true //Si la posición final es igual a la posición inicial, el movimiento es válido
 		else //Sino, tenemos que hacer el cálculo de la nueva posición
@@ -146,13 +155,12 @@ object mainObject
 	}
 	
 	/**
-	 * Método utilizado para conseguir la posicion de una bola en el tablero a partir de sus coordenadas
+	 * Método utilizado para conseguir la posicion de una bola en el tablero a partir de sus coordenadas.
 	 *
-	 * @param tablero Tablero sobre el que se realiza la operacion
-	 * @return El índice en la lista de la bola seleccionada
+	 * @param tablero Tablero sobre el que se realiza la operacion.
+	 * @return El índice en la lista de la bola seleccionada.
 	 */
-	@tailrec
-	def seleccionarBola(tablero: List[Char]): Int =
+	@tailrec def seleccionarBola(tablero: List[Char]): Int =
 	{
 		println("¿En qué fila se encuentra la bola deseada?")
 		val fila = readInt()
@@ -169,12 +177,11 @@ object mainObject
 	/**
 	 * Método utilizado para pedir al usuario el movimiento que quiere realizar.
 	 *
-	 * @param tablero    Tablero sobre el que se va a realizar el movimiento
-	 * @param posInicial Posición donde se inicia el movimiento
-	 * @return Índice de la posición objetivo del movimiento del usuario
+	 * @param tablero    Tablero sobre el que se va a realizar el movimiento.
+	 * @param posInicial Posición donde se inicia el movimiento.
+	 * @return Índice de la posición objetivo del movimiento del usuario.
 	 */
-	@tailrec
-	def pedirMovimiento(tablero: List[Char], posInicial: Int): Int =
+	@tailrec def pedirMovimiento(tablero: List[Char], posInicial: Int): Int =
 	{
 		println("¿En qué fila quieres poner la bola seleccionada?")
 		val fila = readInt()
@@ -206,11 +213,10 @@ object mainObject
 	 *
 	 * @param tablero Tablero con el que se desea continuar la ejecución del juego.
 	 */
-	@tailrec
-	def bucleJuego(tablero: List[Char]): Unit =
+	@tailrec def bucleJuego(tablero: List[Char]): Unit =
 	{
 		mostrarTablero(tablero)
-		if (/*comprobarFin(tablero)*/ false)
+		if (comprobarFin(tablero))
 			{
 				println("Se acabó el juego")
 			} else

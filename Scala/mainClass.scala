@@ -1,8 +1,7 @@
-import scala.annotation.tailrec
-
 object mainObject
 {
-	
+
+	import scala.annotation.tailrec
 	import scala.util.Random
 	import scala.io.StdIn.readInt
 	
@@ -224,7 +223,7 @@ object mainObject
 				val posicionInicialElegida = seleccionarBola(tablero)
 				val posicionFinalElegida = pedirMovimiento(tablero, posicionInicialElegida)
 				val aux = realizarMovimiento(recorrerTablero(tablero, posicionInicialElegida), posicionFinalElegida, tablero)
-				val actualizado = realizarMovimiento(0, posicionInicialElegida, aux)
+				val actualizado = realizarMovimiento('-', posicionInicialElegida, aux)
 				bucleJuego(actualizado)
 			}
 	}

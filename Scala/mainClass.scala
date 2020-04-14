@@ -34,6 +34,7 @@ object mainObject
 //	{
 //		//TODO: Crear método de generación de tableros aleatorios
 //	}
+	
 	/**
 	 * Método utilizado para poder imprimir el tablero por la pantalla.
 	 *
@@ -54,13 +55,12 @@ object mainObject
 		
 		enseñarDentro(tablero, 1)
 	}
-
-
+	
 //	def comprobar5EnRaya(tablero: List[Int]): List[Int] =
 //	{
-//		//TODO: Encontrar manera de comprobar si hay 5 bolas adyacentes del mismo color, teniendo en cuenta
-//		// todas las diagonales posibles
+//		//TODO: Encontrar manera de comprobar si hay 5 bolas adyacentes del mismo color, teniendo en cuenta todas las diagonales posibles
 //	}
+	
 	/**
 	 * Método que comprueba si quedan más movimientos disponibles en en tablero.
 	 *
@@ -98,9 +98,9 @@ object mainObject
 	 */
 	def calcularMovimiento(tablero: List[Int], posInicial: Int, posFinal: Int): Int =
 	{
-		val filaInicial = (posInicial + 9)/ 9
+		val filaInicial = (posInicial + 9) / 9
 		val colInicial = posInicial % 9
-		val filaFinal = (posFinal + 9)/ 9
+		val filaFinal = (posFinal + 9) / 9
 		val colFinal = posFinal % 9
 		val filaPosible = if (filaInicial < filaFinal) filaInicial + 1
 		else if (filaInicial > filaFinal) filaInicial - 1
@@ -108,17 +108,25 @@ object mainObject
 		val colPosible = if (colInicial < colFinal) colInicial + 1
 		else if (colInicial > colFinal) colInicial - 1
 		else colInicial
+		println("El valor de la posición inicial es "+posInicial)
+		println("El valor de la columna inicial es "+colInicial)
+		println("El valor de la fila inicial es "+filaInicial)
+		println("El valor de la columna final es  "+colFinal)
+		println("El valor de la fila final es  "+filaFinal)
+		println("El valor de la nueva columna posible es "+colPosible)
+		println("El valor de la nueva fila posible es "+filaPosible)
+		
 		if (filaPosible != filaInicial && recorrerTablero(tablero, conseguirIndice(colInicial, filaPosible)) == 0)
 		{
 			conseguirIndice(colInicial, filaPosible)
 		}
 		else if (colPosible != colInicial && recorrerTablero(tablero, conseguirIndice(colPosible, filaInicial)) == 0)
 		{
+			
 			conseguirIndice(colPosible, filaInicial)
 		}
 		else -1
 	}
-	
 	
 	/**
 	 * Método que comprueba si un movimiento es válido o no
@@ -130,7 +138,6 @@ object mainObject
 	 */
 	def comprobarMovimiento(tablero: List[Int], posInicial: Int, posFinal: Int): Boolean =
 	{
-		//TODO: Crear un método que compruebe si un movimiento es válido o no
 		if (posInicial == posFinal) true
 		else
 		{
@@ -141,9 +148,10 @@ object mainObject
 	}
 	
 	/**
-	 * Metodo utilizado para pedir la posición de la bola que el usuario quiere mover.
+	 * Método utilizado para conseguir la posicion de una bola en el tablero a partir de sus coordenadas
 	 *
-	 * @return Retorna un valor numérico que indica la bola seleccionada por el usuario.
+	 * @param tablero Tablero sobre el que se realiza la operacion
+	 * @return El índice en la lista de la bola seleccionada
 	 */
 	def seleccionarBola(tablero: List[Int]): Int =
 	{
@@ -151,8 +159,8 @@ object mainObject
 		val fila = readInt()
 		println("En qué columna se encuentra la bola deseada")
 		val columna = readInt()
-		val aux = conseguirIndice(columna, fila)
-		if (aux >= 0 && aux < tablero.length) recorrerTablero(tablero, aux)
+		val posicionBola = conseguirIndice(columna, fila)
+		if (posicionBola >= 0 && posicionBola < tablero.length) posicionBola
 		else
 		{
 			println("Esa posición no se encuentra dentro del tablero, por favor vuelva a intentarlo")
@@ -174,6 +182,7 @@ object mainObject
 		println("En qué columna quieres poner la bola seleccionada")
 		val columna = readInt()
 		val posFinal = conseguirIndice(columna, fila) //Usamos este método para calcular el índice mediante columna y fila
+		println("Se ha elegido la posición " + posFinal + " que tiene un valor de " + recorrerTablero(tablero, posFinal))
 		if (comprobarMovimiento(tablero, posInicial, posFinal)) posFinal
 		else
 		{
@@ -195,7 +204,6 @@ object mainObject
 		if (tablero.isEmpty) Nil
 		else if (pos == 1) bola :: tablero.tail
 		else tablero.head :: realizarMovimiento(bola, pos - 1, tablero.tail)
-		//comprobar5EnRaya(tablero)
 	}
 	
 	/**
@@ -211,16 +219,18 @@ object mainObject
 				println("Se acabó el juego")
 			} else
 			{
-				val bolaElegida = seleccionarBola(tablero)
-				val posicionElegida = pedirMovimiento(tablero, bolaElegida)
-				val actualizado = realizarMovimiento(bolaElegida, posicionElegida, tablero)
+				val posicionInicialElegida = seleccionarBola(tablero)
+				println("Se ha elegido una bola en la posición "+posicionInicialElegida+ " con el valor " + recorrerTablero(tablero, posicionInicialElegida))
+				val posicionFinalElegida = pedirMovimiento(tablero, posicionInicialElegida)
+				val aux = realizarMovimiento(recorrerTablero(tablero, posicionInicialElegida), posicionFinalElegida, tablero)
+				val actualizado = realizarMovimiento(0, posicionInicialElegida, aux)
 				bucleJuego(actualizado)
 			}
 	}
 	
 	def main(args: Array[String]): Unit =
 	{
-		val tablero = List(1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+		val tablero = List(0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0)
 		bucleJuego(tablero)
 	}
 }
